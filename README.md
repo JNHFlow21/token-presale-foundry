@@ -14,9 +14,6 @@
 - [技术架构](#技术架构)
 - [安装指南](#安装指南)
 - [测试策略](#测试策略)
-- [部署指南](#部署指南)
-- [合约交互](#合约交互)
-- [安全考量](#安全考量)
 - [贡献指南](#贡献指南)
 - [许可证](#许可证)
 
@@ -33,7 +30,7 @@
 2. **配置环境变量**
    - 创建`.env`文件
    ```bash
-   cp .env.example .env
+   cp .env
    ```
    - 编辑`.env`文件，配置必要的变量：
    ```
@@ -146,32 +143,6 @@ graph TD
    - 模拟Chainlink价格预言机功能
    - 用于单元测试和集成测试
 
-## ⚙️ 安装指南
-
-### 前提条件
-
-- [Foundry](https://getfoundry.sh/) 工具链
-- [Git](https://git-scm.com/downloads)
-
-### 克隆仓库
-
-```bash
-git clone https://github.com/[your-username]/token-presale-foundry.git
-cd token-presale-foundry
-```
-
-### 安装依赖
-
-```bash
-forge install
-```
-
-### 编译合约
-
-```bash
-forge build --via-ir --optimize
-```
-
 ## 🧪 测试策略
 
 本项目采用多维度测试策略，确保合约的安全性和功能正确性：
@@ -182,7 +153,7 @@ forge build --via-ir --optimize
 
 ```bash
 # 运行单元测试
-forge test --match-path test/unit/TokenPresaleTest_Unit.t.sol -v
+make test-unit
 ```
 
 **主要测试内容**：
@@ -198,7 +169,7 @@ forge test --match-path test/unit/TokenPresaleTest_Unit.t.sol -v
 
 ```bash
 # 运行集成测试
-forge test --match-path test/integration/TokenPresaleTest_Integration.t.sol -v
+make test-integration
 ```
 
 **主要测试内容**：
@@ -213,7 +184,7 @@ forge test --match-path test/integration/TokenPresaleTest_Integration.t.sol -v
 
 ```bash
 # 运行分叉测试 (需要RPC URL)
-forge test --match-path test/forked/TokenPresaleTest_Forked.t.sol --fork-url $SEPOLIA_RPC_URL -v
+make test-forked
 ```
 
 **主要测试内容**：
@@ -234,138 +205,6 @@ forge test --match-path test/staging/TokenPresaleTest_Staging.t.sol --fork-url $
 - 多用户参与的预售场景
 - 在主网环境中的完整业务流程
 - 极端情况下的紧急处理
-
-### 运行全部测试
-
-使用脚本一键运行所有测试：
-
-```bash
-./script/RunTests.sh
-```
-
-## 🚀 部署指南
-
-### 环境配置
-
-1. 创建`.env`文件并设置以下环境变量：
-
-```
-# RPC URLs
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_API_KEY
-MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_API_KEY
-RPC_URL=http://localhost:8545
-
-# 部署钱包
-PRIVATE_KEY=your_private_key
-MYWALLET_ADDRESS=your_wallet_address
-
-# API Keys
-ETHERSCAN_API_KEY=your_etherscan_api_key
-```
-
-2. 加载环境变量：
-
-```bash
-source .env
-```
-
-### 本地部署 (Anvil)
-
-```bash
-# 启动本地节点
-anvil
-
-# 部署合约
-forge create src/TokenPresale.sol:TokenPresale \
-  --from $MYWALLET_ADDRESS \
-  --rpc-url http://127.0.0.1:8545 \
-  --private-key $PRIVATE_KEY \
-  --legacy \
-  -vvv
-```
-
-### 测试网部署 (Sepolia)
-
-```bash
-# 使用脚本部署
-forge script script/DeployTokenPresale.s.sol:DeployTokenPresale \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --private-key $PRIVATE_KEY \
-  --broadcast \
-  --verify \
-  --etherscan-api-key $ETHERSCAN_API_KEY \
-  -vvv
-
-# 或者直接部署
-forge create src/TokenPresale.sol:TokenPresale \
-  --rpc-url $SEPOLIA_RPC_URL \
-  --private-key $PRIVATE_KEY \
-  --verify \
-  --etherscan-api-key $ETHERSCAN_API_KEY \
-  --legacy \
-  -vvv
-```
-
-## 💼 合约交互
-
-部署后，可以使用以下方法与合约交互：
-
-### 使用Cast命令行工具
-
-```bash
-# 查询预售结束时间
-cast call $CONTRACT_ADDRESS "presaleEndTime()" --rpc-url $RPC_URL
-
-# 参与预售
-cast send $CONTRACT_ADDRESS "fund()" --value 0.01ether --from $YOUR_ADDRESS --private-key $YOUR_PRIVATE_KEY --rpc-url $RPC_URL
-
-# 提取ETH (仅项目方)
-cast send $CONTRACT_ADDRESS "withdrawETH()" --from $OWNER_ADDRESS --private-key $OWNER_PRIVATE_KEY --rpc-url $RPC_URL
-
-# 领取代币
-cast send $CONTRACT_ADDRESS "claimTokens()" --from $YOUR_ADDRESS --private-key $YOUR_PRIVATE_KEY --rpc-url $RPC_URL
-
-# 查询用户信息
-cast call $CONTRACT_ADDRESS "getUserInfo(address)" $YOUR_ADDRESS --rpc-url $RPC_URL
-```
-
-### 使用前端应用
-
-如需集成到前端应用，可以使用ethers.js或web3.js库：
-
-```javascript
-// 使用ethers.js示例
-const { ethers } = require("ethers");
-const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-const signer = new ethers.Wallet(PRIVATE_KEY, provider);
-const contractABI = [...]; // 合约ABI
-const contractAddress = "0x..."; // 合约地址
-const tokenPresale = new ethers.Contract(contractAddress, contractABI, signer);
-
-// 参与预售
-const tx = await tokenPresale.fund({ value: ethers.utils.parseEther("0.01") });
-await tx.wait();
-
-// 查询用户信息
-const userInfo = await tokenPresale.getUserInfo(userAddress);
-console.log({
-  contributed: ethers.utils.formatUnits(userInfo[0], 0),
-  claimed: userInfo[1].toString(),
-  claimable: userInfo[2].toString()
-});
-```
-
-## 🔒 安全考量
-
-本项目实现了多重安全机制，但在生产环境使用前，请注意以下安全事项：
-
-1. **预言机依赖**：合约依赖Chainlink预言机获取ETH/USD价格，如果预言机故障或被操纵，可能影响预售
-2. **紧急暂停**：项目方拥有暂停合约的权限，确保项目方可信
-3. **价格波动**：ETH价格波动可能影响用户参与预售的美元价值计算
-4. **线性解锁**：代币在24小时内线性解锁，防止立即抛售
-5. **整数溢出保护**：使用Solidity 0.8版本，内置整数溢出保护
-
-建议在主网部署前进行专业的安全审计。
 
 ## 🤝 贡献指南
 

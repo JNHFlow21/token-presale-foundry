@@ -17,6 +17,7 @@ import {PriceConverter} from "../../src/PriceConverter.sol";
 /**
  * @title TokenPresaleTest_Staging
  * @notice 阶段测试 - 在部署前模拟生产环境进行最终验证
+ *          !!! 这个文件没测试过 可能会报错
  * @dev 运行命令: forge test --match-path test/staging/TokenPresaleTest_Staging.t.sol --fork-url $MAINNET_RPC_URL -vvv
  */
 contract TokenPresaleTest_Staging is Test {

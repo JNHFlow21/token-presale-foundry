@@ -25,7 +25,7 @@ contract TokenPresale {
     mapping(address => uint256) public userClaimedTokens; // 用户已领取的代币数量
     address[] public contributors; // 所有参与用户列表（辅助遍历）
     mapping(address => bool) public hasContributed; // 判断用户是否募集过
-    mapping(address => uint) public userTotalToken; // 用户总共的代币数量
+    mapping(address => uint256) public userTotalToken; // 用户总共的代币数量
     bool public paused; //紧急暂停项目
     uint256 public constant tolerance = 1e16; // 容忍 0.01 usd 的误差
 
@@ -45,8 +45,9 @@ contract TokenPresale {
         // 时间结束
         if (block.timestamp > presaleEndTime) revert PresaleEnded();
         // 目标完成
-        if (totalUsdRaised >= goalInUsd)
+        if (totalUsdRaised >= goalInUsd) {
             revert GoalReached();
+        }
 
         uint256 minUsd = 10 * 1e18;
         if (msg.value.getLatestETHPriceInUSD() < minUsd) revert TooSmall();
@@ -65,18 +66,20 @@ contract TokenPresale {
         if (msg.sender != owner) revert notOwner();
         _;
     }
+
     modifier canWithdraw() {
         if (
             // 容忍 0.01 usd 的误差
-            totalUsdRaised + tolerance < goalInUsd &&
-            block.timestamp <= presaleEndTime
+            totalUsdRaised + tolerance < goalInUsd && block.timestamp <= presaleEndTime
         ) revert notFinished();
         _;
     }
+
     modifier canClaim() {
         if (!isClaimEnabled) revert ClaimDisabled();
         _;
     }
+
     modifier notPaused() {
         require(!paused);
         _;
@@ -96,9 +99,7 @@ contract TokenPresale {
     function withdrawETH() public payable onlyOwner canWithdraw {
         console.log("withdrawing to owner: %s", owner);
         //不能清零mapping和contributors，因为还要根据余额发token
-        (bool isSuccess, ) = payable(owner).call{value: address(this).balance}(
-            ""
-        );
+        (bool isSuccess,) = payable(owner).call{value: address(this).balance}("");
         if (!isSuccess) revert withdrawFailed();
 
         enableClaim();
@@ -121,9 +122,7 @@ contract TokenPresale {
     /*
     查询某地址可领取的 Token 数量
     */
-    function getTokenClaimable(
-        address user
-    ) public view canClaim returns (uint256) {
+    function getTokenClaimable(address user) public view canClaim returns (uint256) {
         //算出已解锁的token数量
         uint256 elapsed = block.timestamp - unlockStartTime;
         if (elapsed > unlockDuration) elapsed = unlockDuration;
@@ -160,14 +159,8 @@ contract TokenPresale {
     /*
     返回用户贡献 USD、已领取 Token、可领取 Token
     */
-    function getUserInfo(
-        address user
-    ) public view returns (uint256, uint256, uint256) {
-        return (
-            userUsdContributed[user] / 1e18,
-            userClaimedTokens[user],
-            getTokenClaimable(user)
-        );
+    function getUserInfo(address user) public view returns (uint256, uint256, uint256) {
+        return (userUsdContributed[user] / 1e18, userClaimedTokens[user], getTokenClaimable(user));
     }
 
     /*

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代币预售页面</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .connection-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .btn-primary {
+            background-color: #6c5ce7;
+            border-color: #6c5ce7;
+        }
+        .btn-primary:hover {
+            background-color: #5d4fd6;
+            border-color: #5d4fd6;
+        }
+        .progress {
+            height: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">代币预售 DApp</h1>
+        
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">钱包连接</h5>
+                        <div id="walletStatus" class="connection-status disconnected">未连接</div>
+                    </div>
+                    <div class="card-body">
+                        <button id="connectWallet" class="btn btn-primary">连接 MetaMask</button>
+                        <p id="accountAddress" class="mt-3"></p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">预售信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <p><strong>目标金额:</strong> <span id="goalInUsd">-</span> USD</p>
+                            <p><strong>已筹集金额:</strong> <span id="totalUsdRaised">-</span> USD</p>
+                            <p><strong>预售结束时间:</strong> <span id="presaleEndTime">-</span></p>
+                            <p><strong>代币兑换比例:</strong> 1 USD = <span id="tokenRate">-</span> Token</p>
+                            <div class="progress">
+                                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-end"><span id="progressText">0</span>%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">参与预售</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="ethAmount" class="form-label">ETH 金额</label>
+                            <input type="number" class="form-control" id="ethAmount" placeholder="输入ETH数量" step="0.01">
+                            <div class="form-text">最小参与金额：0.01 ETH</div>
+                        </div>
+                        <div class="mb-3">
+                            <p>预计获得代币：<span id="estimatedTokens">0</span> Token</p>
+                        </div>
+                        <button id="fundButton" class="btn btn-primary">参与预售</button>
+                        <div id="fundStatus" class="mt-3"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">我的贡献</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>已贡献金额:</strong> <span id="userUsdContributed">-</span> USD</p>
+                        <p><strong>总代币数量:</strong> <span id="userTotalToken">-</span> Token</p>
+                        <p><strong>已领取代币:</strong> <span id="userClaimedTokens">-</span> Token</p>
+                        <p><strong>可领取代币:</strong> <span id="userClaimableTokens">-</span> Token</p>
+                        <button id="claimButton" class="btn btn-primary" disabled>领取代币</button>
+                        <div id="claimStatus" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        // 合约地址和ABI（需要部署后填写）
+        const contractAddress = "YOUR_CONTRACT_ADDRESS";
+        const contractABI = [
+            {
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [],
+                "name": "ClaimDisabled",
+                "type": "error"
+            },
+            {
+                "inputs": [],
+                "name": "GoalReached",
+                "type": "error"
+            },
+            {
+                "inputs": [],
+                "name": "PresaleEnded",
+                "type": "error"
+            },
+            {
+                "inputs": [],
+                "name": "TooSmall",
+                "type": "error"
+            },
+            {
+                "inputs": [],
+                "name": "notFinished",
+                "type": "error"
+            },
+            {
+                "inputs": [],
+                "name": "notOwner",
+                "type": "error"
+            },
+            {
+                "inputs": [],
+                "name": "withdrawFailed",
+                "type": "error"
+            },
+            {
+                "stateMutability": "payable",
+                "type": "fallback"
+            },
+            {
+                "inputs": [],
+                "name": "claimTokens",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "contributors",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "fund",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getTokenClaimable",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getUserInfo",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "hasContributed",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "goalInUsd",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "isClaimEnabled",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "pause",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "paused",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "presaleEndTime",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "stateMutability": "payable",
+                "type": "receive"
+            },
+            {
+                "inputs": [],
+                "name": "tokenPerUsdRate",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "tolerance",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalUsdRaised",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "unlockDuration",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "unlockStartTime",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "unpause",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "userClaimedTokens",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "userTotalToken",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "userUsdContributed",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "withdrawETH",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            }
+        ];
+
+        // 全局变量
+        let web3;
+        let contract;
+        let userAccount;
+        let ethPrice = 0;
+
+        // 页面加载完成后执行
+        window.addEventListener('DOMContentLoaded', () => {
+            // 连接钱包按钮
+            document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            
+            // 参与预售按钮
+            document.getElementById('fundButton').addEventListener('click', fundContract);
+            
+            // 领取代币按钮
+            document.getElementById('claimButton').addEventListener('click', claimTokens);
+            
+            // ETH金额输入框事件
+            document.getElementById('ethAmount').addEventListener('input', calculateEstimatedTokens);
+            
+            // 检查是否已安装 MetaMask
+            checkIfMetaMaskIsInstalled();
+        });
+
+        // 检查是否安装了 MetaMask
+        function checkIfMetaMaskIsInstalled() {
+            if (typeof window.ethereum !== 'undefined') {
+                console.log('MetaMask已安装!');
+                // 检查是否已经连接
+                if (window.ethereum.selectedAddress) {
+                    connectWallet();
+                }
+            } else {
+                alert('请安装MetaMask钱包扩展程序才能使用本应用！');
+                document.getElementById('connectWallet').disabled = true;
+                document.getElementById('walletStatus').innerText = '请安装MetaMask';
+            }
+        }
+
+        // 连接 MetaMask 钱包
+        async function connectWallet() {
+            try {
+                // 请求账户访问
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                userAccount = accounts[0];
+                
+                // 更新UI状态
+                document.getElementById('accountAddress').innerText = `地址: ${userAccount.substring(0, 6)}...${userAccount.substring(userAccount.length - 4)}`;
+                document.getElementById('walletStatus').innerText = '已连接';
+                document.getElementById('walletStatus').classList.remove('disconnected');
+                document.getElementById('walletStatus').classList.add('connected');
+                
+                // 初始化Web3
+                web3 = new Web3(window.ethereum);
+                
+                // 初始化合约
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+                
+                // 获取合约信息
+                getContractInfo();
+                
+                // 监听账户变化
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    window.location.reload();
+                });
+                
+                // 监听链变化
+                window.ethereum.on('chainChanged', (chainId) => {
+                    window.location.reload();
+                });
+                
+            } catch (error) {
+                console.error("连接钱包时出错:", error);
+                alert("连接钱包失败，请重试！");
+            }
+        }
+
+        // 获取合约信息
+        async function getContractInfo() {
+            try {
+                // 获取目标金额
+                const goalInUsd = await contract.methods.goalInUsd().call();
+                document.getElementById('goalInUsd').innerText = formatUSD(goalInUsd);
+                
+                // 获取已筹集金额
+                const totalUsdRaised = await contract.methods.totalUsdRaised().call();
+                document.getElementById('totalUsdRaised').innerText = formatUSD(totalUsdRaised);
+                
+                // 获取代币兑换比例
+                const tokenRate = await contract.methods.tokenPerUsdRate().call();
+                document.getElementById('tokenRate').innerText = tokenRate;
+                
+                // 获取预售结束时间
+                const presaleEndTime = await contract.methods.presaleEndTime().call();
+                const endTime = new Date(presaleEndTime * 1000);
+                document.getElementById('presaleEndTime').innerText = formatDate(endTime);
+                
+                // 更新进度条
+                const progressPercent = (totalUsdRaised / goalInUsd) * 100;
+                document.getElementById('progressBar').style.width = `${progressPercent}%`;
+                document.getElementById('progressBar').setAttribute('aria-valuenow', progressPercent);
+                document.getElementById('progressText').innerText = progressPercent.toFixed(2);
+                
+                // 获取用户信息
+                getUserInfo();
+                
+                // 检查是否可以领取代币
+                const isClaimEnabled = await contract.methods.isClaimEnabled().call();
+                document.getElementById('claimButton').disabled = !isClaimEnabled;
+                
+                // 设置定时器，每10秒刷新一次合约信息
+                setTimeout(getContractInfo, 10000);
+                
+            } catch (error) {
+                console.error("获取合约信息时出错:", error);
+            }
+        }
+
+        // 获取用户信息
+        async function getUserInfo() {
+            try {
+                if (!userAccount) return;
+                
+                // 获取用户信息
+                const userInfo = await contract.methods.getUserInfo(userAccount).call();
+                document.getElementById('userUsdContributed').innerText = userInfo[0];
+                document.getElementById('userClaimedTokens').innerText = userInfo[1];
+                document.getElementById('userClaimableTokens').innerText = userInfo[2];
+                
+                // 获取用户总代币
+                const userTotalToken = await contract.methods.userTotalToken(userAccount).call();
+                document.getElementById('userTotalToken').innerText = userTotalToken;
+                
+            } catch (error) {
+                console.error("获取用户信息时出错:", error);
+            }
+        }
+
+        // 参与预售
+        async function fundContract() {
+            try {
+                const ethAmount = document.getElementById('ethAmount').value;
+                if (!ethAmount || ethAmount <= 0) {
+                    alert("请输入有效的ETH金额");
+                    return;
+                }
+                
+                document.getElementById('fundStatus').innerText = "交易处理中...";
+                
+                // 将ETH转换为Wei
+                const weiAmount = web3.utils.toWei(ethAmount, 'ether');
+                
+                // 发送交易
+                await contract.methods.fund().send({
+                    from: userAccount,
+                    value: weiAmount
+                });
+                
+                document.getElementById('fundStatus').innerText = "参与成功！";
+                document.getElementById('ethAmount').value = '';
+                document.getElementById('estimatedTokens').innerText = '0';
+                
+                // 刷新合约信息
+                getContractInfo();
+                
+            } catch (error) {
+                console.error("参与预售时出错:", error);
+                let errorMessage = "交易失败";
+                
+                if (error.message.includes("PresaleEnded")) {
+                    errorMessage = "预售已结束";
+                } else if (error.message.includes("GoalReached")) {
+                    errorMessage = "预售目标已达成";
+                } else if (error.message.includes("TooSmall")) {
+                    errorMessage = "金额太小，至少需要10美元等值的ETH";
+                }
+                
+                document.getElementById('fundStatus').innerText = `错误：${errorMessage}`;
+            }
+        }
+
+        // 领取代币
+        async function claimTokens() {
+            try {
+                document.getElementById('claimStatus').innerText = "正在领取代币...";
+                
+                // 调用合约方法
+                await contract.methods.claimTokens().send({
+                    from: userAccount
+                });
+                
+                document.getElementById('claimStatus').innerText = "代币领取成功！";
+                
+                // 刷新用户信息
+                getUserInfo();
+                
+            } catch (error) {
+                console.error("领取代币时出错:", error);
+                let errorMessage = "交易失败";
+                
+                if (error.message.includes("ClaimDisabled")) {
+                    errorMessage = "代币领取功能未启用";
+                }
+                
+                document.getElementById('claimStatus').innerText = `错误：${errorMessage}`;
+            }
+        }
+
+        // 计算预计获得的代币数量
+        async function calculateEstimatedTokens() {
+            try {
+                if (!contract) return;
+                
+                const ethAmount = document.getElementById('ethAmount').value;
+                if (!ethAmount || ethAmount <= 0) {
+                    document.getElementById('estimatedTokens').innerText = '0';
+                    return;
+                }
+                
+                // 获取ETH-USD汇率 (简化方式，实际应该通过API或合约获取)
+                // 这里假设1 ETH = 2000 USD，实际应用中应该获取实时价格
+                const ethToUsd = 2000;
+                const usdValue = ethAmount * ethToUsd;
+                
+                // 获取代币兑换比例
+                const tokenRate = await contract.methods.tokenPerUsdRate().call();
+                
+                // 计算代币数量
+                const estimatedTokens = usdValue * tokenRate;
+                
+                document.getElementById('estimatedTokens').innerText = estimatedTokens.toFixed(2);
+                
+            } catch (error) {
+                console.error("计算代币数量时出错:", error);
+            }
+        }
+
+        // 格式化USD金额
+        function formatUSD(amount) {
+            return (amount / 1e18).toFixed(2);
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            return date.toLocaleString();
+        }
+    </script>
+</body>
+</html> 

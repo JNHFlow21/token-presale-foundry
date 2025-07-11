@@ -23,17 +23,17 @@ contract DeployTokenPresale is Script {
     function run() external {
         // 获取部署者的私钥
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
+
         // 开始广播交易
         vm.startBroadcast(deployerPrivateKey);
-        
+
         // 部署TokenPresale合约
         TokenPresale tokenPresale = new TokenPresale();
-        
+
         // 打印部署的合约地址
         console.log("TokenPresale deployed at:", address(tokenPresale));
-        
+
         // 结束广播
         vm.stopBroadcast();
     }
-} 
+}

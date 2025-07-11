@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {Script, console} from "forge-std/Script.sol";
 import {TokenPresale} from "../src/TokenPresale.sol";
+import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
 
 /**
  * @title DeployTokenPresale
@@ -27,8 +28,23 @@ contract DeployTokenPresale is Script {
         // 开始广播交易
         vm.startBroadcast(deployerPrivateKey);
 
+        address priceFeedAddress;
+
+        if (block.chainid == 31337) {
+              // 本地 anvil，部署 mock
+              MockV3Aggregator mock = new MockV3Aggregator(8, 2000 * 1e8); // 模拟 2000 USD
+            priceFeedAddress = address(mock);
+            console.log("Deployed MockV3Aggregator at", priceFeedAddress);
+        } else if (block.chainid == 11155111) {
+            // sepolia 上的 ETH/USD 真实预言机地址
+            priceFeedAddress = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
+        } else {
+            revert("Unsupported chain id");
+        }
+
         // 部署TokenPresale合约
-        TokenPresale tokenPresale = new TokenPresale();
+        TokenPresale tokenPresale = new TokenPresale(priceFeedAddress);
+        console.log("TokenPresale deployed at:", address(tokenPresale));
 
         // 打印部署的合约地址
         console.log("TokenPresale deployed at:", address(tokenPresale));

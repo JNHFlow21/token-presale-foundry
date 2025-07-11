@@ -50,7 +50,7 @@ contract TokenPresaleTest_Unit is Test {
         // 创建TokenPresale合约
         // 以创建的owner身份来布置合约
         vm.startPrank(owner);
-        tokenPresale = new TokenPresale();
+        tokenPresale = new TokenPresale(AGGREGATOR_ADDRESS);
         vm.stopPrank();
 
         // 设置测试账户余额

@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {PriceConverter} from "./PriceConverter.sol";
 import {console} from "forge-std/console.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 error PresaleEnded();
 error GoalReached();
@@ -28,14 +29,22 @@ contract TokenPresale {
     mapping(address => uint256) public userTotalToken; // 用户总共的代币数量
     bool public paused; //紧急暂停项目
     uint256 public constant tolerance = 1e16; // 容忍 0.01 usd 的误差
+    AggregatorV3Interface public priceFeed;
+
 
     using PriceConverter for uint256;
 
-    constructor() {
+    constructor(address _priceFeed) {
+        priceFeed = AggregatorV3Interface(_priceFeed);
         owner = msg.sender;
         presaleEndTime = block.timestamp + 30 * 60; // 30min
         goalInUsd = 50 * 1e18; // 100usd,要对齐18位精度，因为priceconverter 返回的值也是18位精度的美元 比如 100 * 1e18
         tokenPerUsdRate = 100; // 100 = 1 USD 得 100 Token
+    }
+
+    // 供库调用
+    function getPriceFeed() public view returns (AggregatorV3Interface) {
+        return priceFeed;
     }
 
     /*

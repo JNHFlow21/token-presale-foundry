@@ -48,7 +48,7 @@ contract TokenPresaleTest_Integration is Test {
 
         // Create TokenPresale with owner
         vm.startPrank(owner);
-        tokenPresale = new TokenPresale();
+        tokenPresale = new TokenPresale(AGGREGATOR_ADDRESS);
         vm.stopPrank();
 
         // Setup accounts with ETH

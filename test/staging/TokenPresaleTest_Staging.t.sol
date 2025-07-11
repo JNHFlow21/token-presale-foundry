@@ -26,11 +26,12 @@ contract TokenPresaleTest_Staging is Test {
     address owner = makeAddr("owner");
     uint256 constant USER_COUNT = 5;
     uint256 constant STARTING_BALANCE = 5 ether;
+    address constant Chainlink_PriceFeed = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
     function setUp() public {
         // 创建TokenPresale合约
         vm.startPrank(owner);
-        tokenPresale = new TokenPresale();
+        tokenPresale = new TokenPresale(Chainlink_PriceFeed);
         vm.stopPrank();
 
         // 创建多个测试用户

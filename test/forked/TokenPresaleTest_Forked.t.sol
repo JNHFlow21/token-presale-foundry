@@ -26,6 +26,7 @@ contract TokenPresaleTest_Forked is Test {
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
     uint256 constant STARTING_BALANCE = 10 ether;
+    address constant Chainlink_PriceFeed = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
     // 使用真实的预言机和ETH价格
 
@@ -46,7 +47,7 @@ contract TokenPresaleTest_Forked is Test {
 
         // 创建TokenPresale合约
         vm.startPrank(owner);
-        tokenPresale = new TokenPresale();
+        tokenPresale = new TokenPresale(Chainlink_PriceFeed);
         vm.stopPrank();
 
         // 给测试账户分配ETH

@@ -12,6 +12,3 @@ docs/
 
 # Dotenv file
 .env
-
-# 忽略 Makefile（不希望上传）
-Makefile

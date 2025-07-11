@@ -3,1234 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代币预售 - TokenPresale</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>代币预售平台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
     <style>
         body {
             background-color: #f8f9fa;
-            padding: 20px;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
         }
         .card {
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
         }
-        .connection-status {
-            padding: 5px 10px;
-            border-radius: 5px;
-            display: inline-block;
-        }
-        .connected {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .disconnected {
-            background-color: #f8d7da;
-            color: #721c24;
+        .card-header {
+            background-color: #7952b3;
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: bold;
         }
         .btn-primary {
-            background-color: #6c5ce7;
-            border-color: #6c5ce7;
+            background-color: #7952b3;
+            border-color: #7952b3;
         }
         .btn-primary:hover {
-            background-color: #5d4fd6;
-            border-color: #5d4fd6;
+            background-color: #614092;
+            border-color: #614092;
+        }
+        .presale-timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #dc3545;
         }
         .progress {
-            height: 10px;
-            margin-bottom: 10px;
+            height: 25px;
+            border-radius: 8px;
         }
-        .header-card {
-            background-color: #6c5ce7;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
+        .navbar-brand {
+            font-weight: bold;
+        }
+        #connectButton {
+            min-width: 140px;
+        }
+        .status-section {
+            background-color: #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
             margin-bottom: 20px;
         }
-        .alert-banner {
-            background-color: #ffeaa7;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border-left: 5px solid #fdcb6e;
+        .token-info {
+            border-left: 4px solid #7952b3;
+            padding-left: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container py-5">
-        <!-- 重要提示横幅 -->
-        <div class="alert-banner mb-4">
-            <h5>⚠️ 重要提示</h5>
-            <p>在Anvil本地环境中，ETH/USD价格设置为1000 USD/ETH。</p>
-            <p>最低参与金额为10 USD，相当于<strong>0.01 ETH</strong>。请确保发送足够的ETH！</p>
-            <p>如果遇到"TooSmall"错误，请尝试增加ETH金额（如0.02 ETH）。</p>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">代币预售平台</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">主页</a>
+                    </li>
+                </ul>
+                <button id="connectButton" class="btn btn-outline-light">连接钱包</button>
+            </div>
         </div>
-        
-        <h1 class="text-center my-4">代币预售 DApp</h1>
-        
-        <div class="row">
-            <div class="col-md-6 mx-auto">
+    </nav>
+
+    <div class="container">
+        <div id="statusMessage" class="alert d-none" role="alert"></div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">钱包连接</h5>
-                        <div id="walletStatus" class="connection-status disconnected">未连接</div>
-                    </div>
-                    <div class="card-body">
-                        <button id="connectWallet" class="btn btn-primary">连接 MetaMask</button>
-                        <p id="accountAddress" class="mt-3"></p>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">预售信息</h5>
-                    </div>
+                    <div class="card-header">预售状态</div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <p><strong>目标金额:</strong> <span id="goalInUsd">-</span> USD</p>
-                            <p><strong>已筹集金额:</strong> <span id="totalUsdRaised">-</span> USD</p>
-                            <p><strong>预售结束时间:</strong> <span id="presaleEndTime">-</span></p>
-                            <p><strong>代币兑换比例:</strong> 1 USD = <span id="tokenRate">-</span> Token</p>
-                            <div class="progress">
-                                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <p class="text-end"><span id="progressText">0</span>%</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">参与预售</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="ethAmount" class="form-label">ETH 金额</label>
-                            <input type="number" class="form-control" id="ethAmount" placeholder="输入ETH数量" step="0.001" value="0.02">
-                            <div class="form-text">最小参与金额：0.01 ETH (约10美元)</div>
+                            <p class="mb-1">预售结束时间:</p>
+                            <p class="presale-timer" id="presaleEndTime">--:--:--</p>
                         </div>
                         <div class="mb-3">
-                            <p>预计获得代币：<span id="estimatedTokens">0</span> Token</p>
-                        </div>
-                        <div class="mb-3">
-                            <div class="alert alert-warning">
-                                <strong>注意：</strong> 如果遇到"TooSmall"错误，请尝试增加ETH金额。在Anvil环境中，建议使用0.02 ETH或更多。
+                            <p class="mb-1">目标金额: <span id="goalInUsd">50 USD</span></p>
+                            <p class="mb-1">已募集金额: <span id="totalRaised">0 USD</span></p>
+                            <div class="progress mb-2">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
-                        <button id="fundButton" class="btn btn-primary">参与预售</button>
-                        <button id="debugButton" class="btn btn-outline-secondary ms-2">检查状态</button>
-                        <div class="btn-group mt-2">
-                            <button id="quickFund01" class="btn btn-sm btn-outline-primary">快速发送 0.01 ETH</button>
-                            <button id="quickFund02" class="btn btn-sm btn-outline-primary">快速发送 0.02 ETH</button>
-                            <button id="quickFund05" class="btn btn-sm btn-outline-primary">快速发送 0.05 ETH</button>
+                        <div class="mb-3">
+                            <p class="mb-1">兑换比例: <span id="tokenRate">100 TOKEN / USD</span></p>
                         </div>
-                        <div id="fundStatus" class="mt-3"></div>
+                        <div id="contractStatus" class="status-section">
+                            <h5>合约状态</h5>
+                            <p class="mb-1">合约地址: <span id="contractAddress">未连接</span></p>
+                            <p class="mb-1">预售状态: <span id="presaleStatus">未知</span></p>
+                            <p class="mb-0">是否可领取代币: <span id="claimEnabled">否</span></p>
+                        </div>
                     </div>
                 </div>
-                
+            </div>
+
+            <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">我的贡献</h5>
-                    </div>
+                    <div class="card-header">参与预售</div>
                     <div class="card-body">
-                        <p><strong>已贡献金额:</strong> <span id="userUsdContributed">-</span> USD</p>
-                        <p><strong>总代币数量:</strong> <span id="userTotalToken">-</span> Token</p>
-                        <p><strong>已领取代币:</strong> <span id="userClaimedTokens">-</span> Token</p>
-                        <p><strong>可领取代币:</strong> <span id="userClaimableTokens">-</span> Token</p>
-                        <button id="claimButton" class="btn btn-primary" disabled>领取代币</button>
-                        <div id="claimStatus" class="mt-3"></div>
+                        <form id="fundForm">
+                            <div class="mb-3">
+                                <label for="ethAmount" class="form-label">ETH 数量</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="ethAmount" min="0.01" step="0.01" placeholder="最低 0.01 ETH">
+                                    <span class="input-group-text">ETH</span>
+                                </div>
+                                <div class="form-text">当前预计价值: <span id="usdValue">0</span> USD</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" id="fundButton">参与预售</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">我的贡献</div>
+                    <div class="card-body">
+                        <div id="userContribution" class="token-info mb-3">
+                            <p class="mb-1">我的贡献: <span id="myContribution">0 USD</span></p>
+                            <p class="mb-1">已领取代币: <span id="myClaimedTokens">0 TOKEN</span></p>
+                            <p class="mb-0">可领取代币: <span id="myClaimableTokens">0 TOKEN</span></p>
+                        </div>
+                        <button class="btn btn-primary w-100 mb-2" id="claimButton">领取代币</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="adminSection" style="display: none;">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">管理员功能</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button class="btn btn-warning w-100 mb-2" id="withdrawButton">提取 ETH</button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-danger w-100 mb-2" id="pauseButton">暂停预售</button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success w-100 mb-2" id="unpauseButton">恢复预售</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">基于Foundry开发的去中心化代币预售智能合约系统 &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script>
-        // 合约地址和ABI（需要部署后填写）
-        const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // 在这里替换为您部署的合约地址 如："0x1234...5678";
-        /*
-            我的合约地址：
-                anvil：0x5FbDB2315678afecb367f032d93F642f64180aa3
-                sepolia：0x440fAA7B4f657F9862862f3Baea349CfC56444a3
-
-        */ 
-        const contractABI = [
-            {
-                "inputs": [],
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
-                "inputs": [],
-                "name": "ClaimDisabled",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "GoalReached",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "PresaleEnded",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "TooSmall",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "notFinished",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "notOwner",
-                "type": "error"
-            },
-            {
-                "inputs": [],
-                "name": "withdrawFailed",
-                "type": "error"
-            },
-            {
-                "stateMutability": "payable",
-                "type": "fallback"
-            },
-            {
-                "inputs": [],
-                "name": "claimTokens",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "contributors",
-                "outputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "fund",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "user",
-                        "type": "address"
-                    }
-                ],
-                "name": "getTokenClaimable",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "user",
-                        "type": "address"
-                    }
-                ],
-                "name": "getUserInfo",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "name": "hasContributed",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "goalInUsd",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "isClaimEnabled",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "owner",
-                "outputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "pause",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "paused",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "presaleEndTime",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "stateMutability": "payable",
-                "type": "receive"
-            },
-            {
-                "inputs": [],
-                "name": "tokenPerUsdRate",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "tolerance",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "totalUsdRaised",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "unlockDuration",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "unlockStartTime",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "unpause",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "name": "userClaimedTokens",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "name": "userTotalToken",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "name": "userUsdContributed",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "withdrawETH",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            }
-        ];
-
-        // 全局变量
-        let web3;
-        let contract;
-        let userAccount;
-        let ethPrice = 0;
-
-        // 页面加载完成后执行
-        window.addEventListener('DOMContentLoaded', () => {
-            // 连接钱包按钮
-            document.getElementById('connectWallet').addEventListener('click', connectWallet);
-            
-            // 参与预售按钮
-            document.getElementById('fundButton').addEventListener('click', fundContract);
-            
-            // 领取代币按钮
-            document.getElementById('claimButton').addEventListener('click', claimTokens);
-            
-            // 调试按钮
-            document.getElementById('debugButton').addEventListener('click', debugContractStatus);
-            
-            // 快速发送按钮
-            document.getElementById('quickFund01').addEventListener('click', () => quickFund(0.01));
-            document.getElementById('quickFund02').addEventListener('click', () => quickFund(0.02));
-            document.getElementById('quickFund05').addEventListener('click', () => quickFund(0.05));
-            
-            // ETH金额输入框事件
-            document.getElementById('ethAmount').addEventListener('input', calculateEstimatedTokens);
-            
-            // 检查是否已安装 MetaMask
-            checkIfMetaMaskIsInstalled();
-            
-            // 初始计算
-            calculateEstimatedTokens();
-        });
-        
-        // 调试合约状态
-        async function debugContractStatus() {
-            try {
-                if (!contract || !web3) {
-                    alert("请先连接钱包");
-                    return;
-                }
-                
-                const networkId = await web3.eth.net.getId();
-                const networkType = await web3.eth.net.getNetworkType();
-                const balance = await web3.eth.getBalance(userAccount);
-                const balanceInEth = web3.utils.fromWei(balance, 'ether');
-                
-                // 获取合约状态
-                const isPaused = await contract.methods.paused().call();
-                const presaleEndTime = await contract.methods.presaleEndTime().call();
-                const currentTime = Math.floor(Date.now() / 1000);
-                const timeRemaining = presaleEndTime - currentTime;
-                const goalInUsd = await contract.methods.goalInUsd().call();
-                const totalUsdRaised = await contract.methods.totalUsdRaised().call();
-                const isClaimEnabled = await contract.methods.isClaimEnabled().call();
-                
-                // 获取ETH/USD价格
-                const ethPrice = await getEthUsdPrice();
-                
-                // 计算最小ETH金额
-                const minUsdRequired = 10; // 合约要求最少10 USD
-                const minEthRequired = minUsdRequired / (ethPrice / 1e18);
-                
-                // 格式化状态信息
-                const statusInfo = `
-                <div class="alert alert-info">
-                    <h5>调试信息</h5>
-                    <p><strong>网络:</strong> ID=${networkId}, 类型=${networkType}</p>
-                    <p><strong>账户:</strong> ${userAccount}</p>
-                    <p><strong>余额:</strong> ${balanceInEth} ETH</p>
-                    <p><strong>合约地址:</strong> ${contractAddress}</p>
-                    <p><strong>合约状态:</strong> ${isPaused ? '已暂停' : '正常'}</p>
-                    <p><strong>预售结束时间:</strong> ${new Date(presaleEndTime * 1000).toLocaleString()}</p>
-                    <p><strong>剩余时间:</strong> ${timeRemaining > 0 ? formatTimeLeft(timeRemaining) : '已结束'}</p>
-                    <p><strong>目标金额:</strong> ${web3.utils.fromWei(goalInUsd, 'ether')} USD</p>
-                    <p><strong>已筹集金额:</strong> ${web3.utils.fromWei(totalUsdRaised, 'ether')} USD</p>
-                    <p><strong>代币领取状态:</strong> ${isClaimEnabled ? '已启用' : '未启用'}</p>
-                    <p><strong>当前ETH/USD价格:</strong> ${ethPrice / 1e8} USD/ETH</p>
-                    <p><strong>最小ETH金额要求:</strong> ${minEthRequired.toFixed(6)} ETH (约10 USD)</p>
-                    <div class="alert alert-warning mt-2">
-                        <p><strong>建议操作:</strong> 使用以下按钮快速发送足够的ETH:</p>
-                        <div class="btn-group mt-2">
-                            <button onclick="quickFund(${(minEthRequired * 1.1).toFixed(6)})" class="btn btn-sm btn-outline-primary">发送 ${(minEthRequired * 1.1).toFixed(6)} ETH</button>
-                            <button onclick="quickFund(0.02)" class="btn btn-sm btn-outline-primary">发送 0.02 ETH</button>
-                            <button onclick="quickFund(0.05)" class="btn btn-sm btn-outline-primary">发送 0.05 ETH</button>
-                        </div>
-                    </div>
-                </div>
-                `;
-                
-                document.getElementById('fundStatus').innerHTML = statusInfo;
-                
-            } catch (error) {
-                console.error("获取调试信息时出错:", error);
-                document.getElementById('fundStatus').innerHTML = `<div class="alert alert-danger">获取调试信息失败: ${error.message}</div>`;
-            }
-        }
-        
-        // 获取ETH/USD价格
-        async function getEthUsdPrice() {
-            try {
-                // 使用与PriceConverter相同的地址
-                const aggregatorAddress = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
-                
-                // 创建AggregatorV3Interface合约实例
-                const aggregatorABI = [
-                    {
-                        "inputs": [],
-                        "name": "latestRoundData",
-                        "outputs": [
-                            {"internalType": "uint80", "name": "roundId", "type": "uint80"},
-                            {"internalType": "int256", "name": "answer", "type": "int256"},
-                            {"internalType": "uint256", "name": "startedAt", "type": "uint256"},
-                            {"internalType": "uint256", "name": "updatedAt", "type": "uint256"},
-                            {"internalType": "uint80", "name": "answeredInRound", "type": "uint80"}
-                        ],
-                        "stateMutability": "view",
-                        "type": "function"
-                    }
-                ];
-                
-                const aggregator = new web3.eth.Contract(aggregatorABI, aggregatorAddress);
-                
-                try {
-                    // 尝试调用latestRoundData获取价格
-                    const roundData = await aggregator.methods.latestRoundData().call();
-                    const price = roundData.answer;
-                    
-                    console.log("ETH/USD价格:", price);
-                    
-                    // 检查价格是否有效
-                    if (price && price > 0) {
-                        return price;
-                    } else {
-                        console.warn("获取到的价格为0或无效，使用默认值");
-                        return 1000e8; // 默认使用1000 USD/ETH (与测试环境一致)
-                    }
-                } catch (innerError) {
-                    console.warn("调用latestRoundData失败，使用默认价格:", innerError);
-                    return 1000e8; // 默认使用1000 USD/ETH
-                }
-            } catch (error) {
-                console.error("获取ETH/USD价格出错:", error);
-                return 1000e8; // 默认使用1000 USD/ETH
-            }
-        }
-
-        // 检查是否安装了 MetaMask
-        function checkIfMetaMaskIsInstalled() {
-            // 延迟检测，给MetaMask注入时间
-            setTimeout(() => {
-                if (typeof window.ethereum !== 'undefined') {
-                    console.log('MetaMask已安装!');
-                    // 检查是否已经连接
-                    if (window.ethereum.selectedAddress) {
-                        connectWallet();
-                    }
-                } else {
-                    console.warn('未检测到MetaMask，可能是由于本地文件访问限制');
-                    // 不显示警告，仍然允许点击连接按钮
-                    document.getElementById('walletStatus').innerText = '点击连接按钮';
-                }
-            }, 1000); // 延迟1秒检测
-        }
-
-        // 连接 MetaMask 钱包
-        async function connectWallet() {
-            try {
-                // 检查是否真的有MetaMask
-                if (typeof window.ethereum === 'undefined') {
-                    alert('未检测到MetaMask。请确保已安装MetaMask扩展，并刷新页面。');
-                    return;
-                }
-                
-                // 请求账户访问
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                
-                if (!accounts || accounts.length === 0) {
-                    console.error("未获取到账户");
-                    return;
-                }
-                
-                userAccount = accounts[0];
-                console.log("成功连接到账户:", userAccount);
-                
-                // 更新UI状态
-                document.getElementById('accountAddress').innerText = `地址: ${userAccount.substring(0, 6)}...${userAccount.substring(userAccount.length - 4)}`;
-                document.getElementById('walletStatus').innerText = '已连接';
-                document.getElementById('walletStatus').classList.remove('disconnected');
-                document.getElementById('walletStatus').classList.add('connected');
-                
-                // 初始化Web3
-                web3 = new Web3(window.ethereum);
-                
-                // 获取当前网络信息
-                const networkId = await web3.eth.net.getId();
-                const networkType = await web3.eth.net.getNetworkType();
-                console.log(`当前网络: ID=${networkId}, 类型=${networkType}`);
-                
-                // 检查网络是否匹配合约地址
-                let isNetworkCorrect = true;
-                let networkName = "未知网络";
-                
-                if (networkId === 1) networkName = "以太坊主网";
-                else if (networkId === 11155111) networkName = "Sepolia测试网";
-                else if (networkId === 31337) networkName = "Anvil本地网络";
-                else if (networkId === 1337) networkName = "Ganache/本地网络";
-                
-                // 根据合约地址检查网络
-                if (contractAddress === "0x5FbDB2315678afecb367f032d93F642f64180aa3" && 
-                    !(networkId === 31337 || networkId === 1337)) {
-                    isNetworkCorrect = false;
-                    alert(`警告：您正在使用本地开发合约地址，但连接的是 ${networkName}。请切换到本地开发网络。`);
-                }
-                else if (contractAddress === "0x440fAA7B4f657F9862862f3Baea349CfC56444a3" && 
-                         networkId !== 11155111) {
-                    isNetworkCorrect = false;
-                    alert(`警告：您正在使用Sepolia测试网合约地址，但连接的是 ${networkName}。请切换到Sepolia测试网。`);
-                }
-                
-                // 初始化合约 - 检查合约地址是否有效
-                if (contractAddress === "YOUR_CONTRACT_ADDRESS") {
-                    console.warn("请部署合约并更新合约地址");
-                    alert("请注意：您尚未设置实际的合约地址。在与合约交互前，请先部署合约并更新index.html中的contractAddress变量。");
-                } else {
-                    // 初始化合约
-                    contract = new web3.eth.Contract(contractABI, contractAddress);
-                    
-                    // 获取合约信息
-                    try {
-                        await checkContractStatus();
-                        await getContractInfo();
-                    } catch (contractError) {
-                        console.error("获取合约信息失败:", contractError);
-                        alert("连接到钱包成功，但获取合约信息失败。请确认合约地址是否正确，以及您是否在正确的网络上。");
-                    }
-                }
-                
-                // 监听账户变化
-                window.ethereum.on('accountsChanged', (accounts) => {
-                    window.location.reload();
-                });
-                
-                // 监听链变化
-                window.ethereum.on('chainChanged', (chainId) => {
-                    window.location.reload();
-                });
-                
-            } catch (error) {
-                console.error("连接钱包时出错:", error);
-                // 检查错误类型，避免显示不必要的错误
-                if (error.code === 4001) {
-                    // 用户拒绝了连接请求
-                    console.log("用户拒绝了连接请求");
-                } else {
-                    alert("连接钱包时出现问题，请重试。");
-                }
-            }
-        }
-        
-        // 检查合约状态
-        async function checkContractStatus() {
-            try {
-                if (!contract) return;
-                
-                // 检查合约是否已暂停
-                const isPaused = await contract.methods.paused().call();
-                if (isPaused) {
-                    console.warn("警告：合约当前已暂停");
-                    document.getElementById('fundStatus').innerHTML = `<div class="alert alert-warning">警告：合约当前已暂停，无法参与预售</div>`;
-                    document.getElementById('fundButton').disabled = true;
-                }
-                
-                // 检查预售是否已结束
-                const presaleEndTime = await contract.methods.presaleEndTime().call();
-                const currentTime = Math.floor(Date.now() / 1000);
-                if (currentTime > presaleEndTime) {
-                    console.warn("警告：预售已结束");
-                    document.getElementById('fundStatus').innerHTML = `<div class="alert alert-info">预售已结束</div>`;
-                    document.getElementById('fundButton').disabled = true;
-                }
-                
-                // 检查目标是否已达成
-                const goalInUsd = await contract.methods.goalInUsd().call();
-                const totalUsdRaised = await contract.methods.totalUsdRaised().call();
-                if (totalUsdRaised >= goalInUsd) {
-                    console.warn("警告：预售目标已达成");
-                    document.getElementById('fundStatus').innerHTML = `<div class="alert alert-success">预售目标已达成</div>`;
-                    document.getElementById('fundButton').disabled = true;
-                }
-                
-                return true;
-            } catch (error) {
-                console.error("检查合约状态时出错:", error);
-                return false;
-            }
-        }
-
-        // 获取合约信息
-        async function getContractInfo() {
-            try {
-                if (!contract) {
-                    console.warn("合约未初始化，无法获取信息");
-                    return;
-                }
-                
-                // 获取目标金额
-                const goalInUsd = await contract.methods.goalInUsd().call();
-                document.getElementById('goalInUsd').innerText = formatUSD(goalInUsd);
-                
-                // 获取已筹集金额
-                const totalUsdRaised = await contract.methods.totalUsdRaised().call();
-                document.getElementById('totalUsdRaised').innerText = formatUSD(totalUsdRaised);
-                
-                // 获取代币兑换比例
-                const tokenRate = await contract.methods.tokenPerUsdRate().call();
-                document.getElementById('tokenRate').innerText = tokenRate;
-                
-                // 获取预售结束时间
-                const presaleEndTime = await contract.methods.presaleEndTime().call();
-                const endTime = new Date(presaleEndTime * 1000);
-                document.getElementById('presaleEndTime').innerText = formatDate(endTime);
-                
-                // 更新进度条
-                const progressPercent = (totalUsdRaised / goalInUsd) * 100;
-                document.getElementById('progressBar').style.width = `${progressPercent}%`;
-                document.getElementById('progressBar').setAttribute('aria-valuenow', progressPercent);
-                document.getElementById('progressText').innerText = progressPercent.toFixed(2);
-                
-                // 获取用户信息
-                await getUserInfo();
-                
-                // 检查是否可以领取代币
-                const isClaimEnabled = await contract.methods.isClaimEnabled().call();
-                document.getElementById('claimButton').disabled = !isClaimEnabled;
-                
-                // 设置定时器，每10秒刷新一次合约信息
-                setTimeout(getContractInfo, 10000);
-                
-                console.log("合约信息更新成功");
-                return true;
-                
-            } catch (error) {
-                console.error("获取合约信息时出错:", error);
-                throw error; // 将错误向上传递，以便调用者处理
-            }
-        }
-
-        // 获取用户信息
-        async function getUserInfo() {
-            try {
-                if (!userAccount || !contract) return;
-                
-                // 获取用户信息
-                const userInfo = await contract.methods.getUserInfo(userAccount).call();
-                document.getElementById('userUsdContributed').innerText = userInfo[0];
-                document.getElementById('userClaimedTokens').innerText = userInfo[1];
-                document.getElementById('userClaimableTokens').innerText = userInfo[2];
-                
-                // 获取用户总代币
-                const userTotalToken = await contract.methods.userTotalToken(userAccount).call();
-                document.getElementById('userTotalToken').innerText = userTotalToken;
-                
-                return true;
-            } catch (error) {
-                console.error("获取用户信息时出错:", error);
-                // 不抛出错误，因为这不应该中断整个流程
-                return false;
-            }
-        }
-
-        // 快速发送指定金额的ETH
-        async function quickFund(amount) {
-            document.getElementById('ethAmount').value = amount;
-            calculateEstimatedTokens();
-            fundContract();
-        }
-        
-        // 参与预售
-        async function fundContract() {
-            try {
-                const ethAmount = document.getElementById('ethAmount').value;
-                if (!ethAmount || ethAmount <= 0) {
-                    alert("请输入有效的ETH金额");
-                    return;
-                }
-                
-                // 检查合约状态
-                const statusCheck = await checkContractStatus();
-                if (document.getElementById('fundButton').disabled) {
-                    alert("当前无法参与预售，请查看状态提示");
-                    return;
-                }
-                
-                // 获取实际ETH/USD价格
-                const ethPrice = await getEthUsdPrice();
-                const ethToUsd = ethPrice / 1e8; // 转换为实际USD价格
-                console.log("使用ETH/USD价格:", ethToUsd);
-                
-                // 检查ETH金额是否足够（至少10美元）
-                const usdValue = ethAmount * ethToUsd;
-                const minEthRequired = 10 / ethToUsd;
-                
-                if (usdValue < 10) {
-                    alert(`金额太小，至少需要10美元等值的ETH (约${minEthRequired.toFixed(6)} ETH)`);
-                    return;
-                }
-                
-                document.getElementById('fundStatus').innerHTML = `<div class="alert alert-info">交易处理中...</div>`;
-                
-                // 将ETH转换为Wei
-                const weiAmount = web3.utils.toWei(ethAmount, 'ether');
-                
-                // 获取当前网络ID
-                const networkId = await web3.eth.net.getId();
-                console.log("当前网络ID:", networkId);
-                
-                // 检查用户余额是否足够
-                const balance = await web3.eth.getBalance(userAccount);
-                if (BigInt(balance) < BigInt(weiAmount)) {
-                    alert("ETH余额不足");
-                    document.getElementById('fundStatus').innerHTML = `<div class="alert alert-danger">错误：ETH余额不足</div>`;
-                    return;
-                }
-                
-                // 显示交易信息
-                document.getElementById('fundStatus').innerHTML = `
-                <div class="alert alert-info">
-                    <p>准备发送交易:</p>
-                    <p>金额: ${ethAmount} ETH (约 ${usdValue.toFixed(2)} USD)</p>
-                    <p>ETH/USD汇率: ${ethToUsd} USD/ETH</p>
-                    <p>最小要求: ${minEthRequired.toFixed(6)} ETH (10 USD)</p>
-                </div>`;
-                
-                // 发送交易 - 使用Promise方式处理交易
-                contract.methods.fund().send({
-                    from: userAccount,
-                    value: weiAmount,
-                    gas: 300000 // 设置足够的gas限制
-                })
-                .on('transactionHash', function(hash) {
-                    console.log('交易哈希:', hash);
-                    document.getElementById('fundStatus').innerHTML = `
-                    <div class="alert alert-info">
-                        交易已提交，等待确认...<br>
-                        交易哈希: ${hash.substring(0, 10)}...${hash.substring(hash.length - 6)}
-                    </div>`;
-                    
-                    // 防止页面重定向
-                    if (event && event.preventDefault) {
-                        event.preventDefault();
-                    }
-                })
-                .on('receipt', function(receipt) {
-                    console.log('交易收据:', receipt);
-                    document.getElementById('fundStatus').innerHTML = `
-                    <div class="alert alert-success">
-                        参与成功！<br>
-                        区块: ${receipt.blockNumber}<br>
-                        Gas使用: ${receipt.gasUsed}
-                    </div>`;
-                    document.getElementById('ethAmount').value = '';
-                    document.getElementById('estimatedTokens').innerText = '0';
-                    
-                    // 刷新合约信息
-                    getContractInfo();
-                })
-                .on('error', function(error) {
-                    handleFundError(error);
-                });
-                
-            } catch (error) {
-                handleFundError(error);
-            }
-        }
-        
-        // 处理参与预售时的错误
-        function handleFundError(error) {
-            console.error("参与预售时出错:", error);
-            let errorMessage = "交易失败";
-            let isTooSmallError = false;
-            
-            // 详细记录错误信息到控制台
-            if (error.code) console.log("错误代码:", error.code);
-            if (error.reason) console.log("错误原因:", error.reason);
-            if (error.data) console.log("错误数据:", error.data);
-            if (error.transaction) console.log("错误交易:", error.transaction);
-            
-            // 检查是否是TooSmall错误 (0x8fab9a58)
-            if (error.data === "0x8fab9a58" || (error.message && error.message.includes("0x8fab9a58"))) {
-                errorMessage = "金额太小，至少需要10美元等值的ETH";
-                isTooSmallError = true;
-            }
-            // 检查具体错误类型
-            else if (error.message) {
-                if (error.message.includes("User denied")) {
-                    errorMessage = "用户取消了交易";
-                } else if (error.message.includes("PresaleEnded")) {
-                    errorMessage = "预售已结束";
-                } else if (error.message.includes("GoalReached")) {
-                    errorMessage = "预售目标已达成";
-                } else if (error.message.includes("TooSmall")) {
-                    errorMessage = "金额太小，至少需要10美元等值的ETH";
-                    isTooSmallError = true;
-                } else if (error.message.includes("execution reverted")) {
-                    // 尝试从错误消息中提取更具体的原因
-                    const revertReason = extractRevertReason(error.message);
-                    if (revertReason) {
-                        errorMessage = `合约执行被回滚: ${revertReason}`;
-                    } else {
-                        errorMessage = "合约执行被回滚";
-                    }
-                }
-            }
-            
-            let errorHtml = `<div class="alert alert-danger">错误：${errorMessage}<br><small>${error.message ? error.message.substring(0, 150) : "未知错误"}</small></div>`;
-            
-            // 如果是TooSmall错误，添加建议
-            if (isTooSmallError) {
-                errorHtml += `
-                <div class="alert alert-warning">
-                    <p><strong>建议：</strong> 在Anvil环境中，由于价格配置可能不同，请尝试使用更多ETH：</p>
-                    <div class="btn-group mt-2">
-                        <button onclick="quickFund(0.02)" class="btn btn-sm btn-outline-primary">尝试 0.02 ETH</button>
-                        <button onclick="quickFund(0.05)" class="btn btn-sm btn-outline-primary">尝试 0.05 ETH</button>
-                        <button onclick="quickFund(0.1)" class="btn btn-sm btn-outline-primary">尝试 0.1 ETH</button>
-                    </div>
-                </div>`;
-            }
-            
-            document.getElementById('fundStatus').innerHTML = errorHtml;
-        }
-        
-        // 从错误消息中提取回滚原因
-        function extractRevertReason(errorMessage) {
-            // 尝试从不同格式的错误消息中提取原因
-            const patterns = [
-                /reason="([^"]+)"/,
-                /revert: ([^"]+)/,
-                /reverted: ([^"]+)/,
-                /execution reverted: ([^"]+)/
-            ];
-            
-            for (const pattern of patterns) {
-                const match = errorMessage.match(pattern);
-                if (match && match[1]) {
-                    return match[1];
-                }
-            }
-            
-            return null;
-        }
-
-        // 领取代币
-        async function claimTokens() {
-            try {
-                document.getElementById('claimStatus').innerText = "正在领取代币...";
-                
-                // 调用合约方法 - 使用Promise方式处理交易
-                contract.methods.claimTokens().send({
-                    from: userAccount
-                })
-                .on('transactionHash', function(hash) {
-                    console.log('领取代币交易哈希:', hash);
-                    document.getElementById('claimStatus').innerHTML = `交易已提交，等待确认...<br>交易哈希: ${hash.substring(0, 10)}...`;
-                    
-                    // 防止页面重定向
-                    if (event && event.preventDefault) {
-                        event.preventDefault();
-                    }
-                })
-                .on('receipt', function(receipt) {
-                    console.log('领取代币交易收据:', receipt);
-                    document.getElementById('claimStatus').innerHTML = `代币领取成功！<br>区块: ${receipt.blockNumber}`;
-                    
-                    // 刷新用户信息
-                    getUserInfo();
-                })
-                .on('error', function(error) {
-                    handleClaimError(error);
-                });
-                
-            } catch (error) {
-                handleClaimError(error);
-            }
-        }
-        
-        // 处理领取代币时的错误
-        function handleClaimError(error) {
-            console.error("领取代币时出错:", error);
-            let errorMessage = "交易失败";
-            
-            if (error.message && error.message.includes("User denied")) {
-                errorMessage = "用户取消了交易";
-            } else if (error.message && error.message.includes("ClaimDisabled")) {
-                errorMessage = "代币领取功能未启用";
-            }
-            
-            document.getElementById('claimStatus').innerHTML = `错误：${errorMessage}<br><small>${error.message ? error.message.substring(0, 100) : "未知错误"}</small>`;
-        }
-
-        // 计算预计获得的代币数量
-        async function calculateEstimatedTokens() {
-            try {
-                const ethAmount = document.getElementById('ethAmount').value;
-                if (!ethAmount || ethAmount <= 0) {
-                    document.getElementById('estimatedTokens').innerText = '0';
-                    return;
-                }
-                
-                // 如果合约已初始化，尝试获取实际汇率
-                let tokenRate = 100; // 默认值
-                
-                if (contract) {
-                    try {
-                        // 获取代币兑换比例
-                        tokenRate = await contract.methods.tokenPerUsdRate().call();
-                    } catch (error) {
-                        console.warn("无法从合约获取代币兑换比例，使用默认值:", error);
-                    }
-                }
-                
-                // 获取实际ETH-USD汇率
-                let ethToUsd = 2000; // 默认值
-                try {
-                    const ethPrice = await getEthUsdPrice();
-                    if (ethPrice > 0) {
-                        ethToUsd = ethPrice / 1e8; // 转换为实际USD价格
-                    }
-                } catch (error) {
-                    console.warn("无法获取ETH/USD价格，使用默认值:", error);
-                }
-                
-                // 计算USD价值
-                const usdValue = ethAmount * ethToUsd;
-                
-                // 计算代币数量
-                const estimatedTokens = usdValue * tokenRate;
-                
-                // 更新显示
-                document.getElementById('estimatedTokens').innerText = estimatedTokens.toFixed(2);
-                
-                // 检查是否满足最低要求
-                if (usdValue < 10) {
-                    document.getElementById('fundStatus').innerHTML = 
-                        `<div class="alert alert-warning">警告: 当前金额 ${usdValue.toFixed(2)} USD 低于最低要求 10 USD。<br>
-                        建议金额: ${(10 / ethToUsd).toFixed(6)} ETH</div>`;
-                } else {
-                    document.getElementById('fundStatus').innerHTML = 
-                        `<div class="alert alert-success">金额有效: ${ethAmount} ETH ≈ ${usdValue.toFixed(2)} USD</div>`;
-                }
-                
-            } catch (error) {
-                console.error("计算代币数量时出错:", error);
-                document.getElementById('estimatedTokens').innerText = '计算错误';
-            }
-        }
-
-        // 格式化USD金额
-        function formatUSD(amount) {
-            return (amount / 1e18).toFixed(2);
-        }
-
-        // 格式化日期
-        function formatDate(date) {
-            return date.toLocaleString();
-        }
-        
-        // 获取ETH/USD价格
-        async function getEthUsdPrice() {
-            try {
-                // 使用合约中的价格转换器地址
-                const mockAggregatorAddress = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
-                const mockAggregatorABI = [
-                    "function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)"
-                ];
-                
-                // 创建合约实例
-                const mockAggregator = new web3.eth.Contract(mockAggregatorABI, mockAggregatorAddress);
-                
-                // 获取价格数据
-                const roundData = await mockAggregator.methods.latestRoundData().call();
-                let price = parseInt(roundData.answer);
-                
-                // 如果价格为0或非常小，使用默认值1000 USD/ETH
-                if (price === 0 || price < 100) {
-                    console.log("价格转换器返回0或异常值，使用默认价格1000 USD/ETH");
-                    return 1000 * 1e8; // 返回1000 USD/ETH，使用8位小数
-                }
-                
-                console.log("获取到ETH/USD价格:", price);
-                return price;
-            } catch (error) {
-                console.error("获取ETH/USD价格失败:", error);
-                // 返回默认价格1000 USD/ETH
-                return 1000 * 1e8; // 使用8位小数
-            }
-        }
-        
-        // 格式化剩余时间
-        function formatTimeLeft(seconds) {
-            if (seconds <= 0) return "已结束";
-            
-            const days = Math.floor(seconds / 86400);
-            const hours = Math.floor((seconds % 86400) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = seconds % 60;
-            
-            let result = "";
-            if (days > 0) result += `${days}天 `;
-            if (hours > 0) result += `${hours}小时 `;
-            if (minutes > 0) result += `${minutes}分钟 `;
-            if (remainingSeconds > 0) result += `${remainingSeconds}秒`;
-            
-            return result.trim();
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html> 

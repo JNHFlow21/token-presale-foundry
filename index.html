@@ -55,6 +55,18 @@
             border-left: 4px solid #7952b3;
             padding-left: 10px;
         }
+        .address-display {
+            font-family: monospace;
+            word-break: break-all;
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .btn-group-contract {
+            display: flex;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
@@ -99,7 +111,11 @@
                         </div>
                         <div id="contractStatus" class="status-section">
                             <h5>合约状态</h5>
-                            <p class="mb-1">合约地址: <span id="contractAddress">未连接</span></p>
+                            <p class="mb-1">合约地址: <span id="contractAddress" class="address-display">未连接</span></p>
+                            <div class="btn-group-contract mb-2">
+                                <button class="btn btn-sm btn-primary" id="setContractButton">设置合约地址</button>
+                                <button class="btn btn-sm btn-secondary" id="reconnectButton">重新连接</button>
+                            </div>
                             <p class="mb-1">预售状态: <span id="presaleStatus">未知</span></p>
                             <p class="mb-0">是否可领取代币: <span id="claimEnabled">否</span></p>
                         </div>

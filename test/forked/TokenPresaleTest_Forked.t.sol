@@ -60,8 +60,8 @@ contract TokenPresaleTest_Forked is Test {
         // 捐赠1 ETH，检查转换后的美元金额是否合理
         uint256 ethAmount = 1 ether;
 
-        // 使用PriceConverter获取当前1 ETH的美元价值
-        uint256 usdValue = PriceConverter.getLatestETHPriceInUSD(ethAmount);
+        // 使用合约的getEthUsdPrice获取当前1 ETH的美元价值
+        uint256 usdValue = tokenPresale.getEthUsdPrice(ethAmount);
 
         // 打印当前价格以进行检查
         console.log("1 ETH = %s USD (18 decimals)", usdValue);
@@ -133,7 +133,7 @@ contract TokenPresaleTest_Forked is Test {
     // 测试价格波动对预售的影响
     function testForkPriceFluctuation() public {
         // 1. 获取初始ETH价格
-        uint256 initialUsdValue = PriceConverter.getLatestETHPriceInUSD(1 ether);
+        uint256 initialUsdValue = tokenPresale.getEthUsdPrice(1 ether);
         console.log("Initial ETH price: %s USD (18 decimals)", initialUsdValue);
 
         // 2. 用户1捐赠

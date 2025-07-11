@@ -33,15 +33,15 @@ test: test-unit test-integration
 
 test-unit:
 	@echo "🧪 Running Unit Tests..."
-	forge test --match-path 'test/unit/**.t.sol' -vvvv
+	forge test --match-path 'test/unit/**.t.sol' -vvv
 
 test-integration:
 	@echo "🔗 Running Integration Tests..."
-	forge test --match-path 'test/integration/**.t.sol' -vvvv
+	forge test --match-path 'test/integration/**.t.sol' -vvv
 
 test-forked:
 	@echo "🌍 Running Forked Tests with fork-url = $(SEPOLIA_RPC_URL)"
-	forge test --match-path 'test/forked/**.t.sol' --fork-url $(SEPOLIA_RPC_URL) -vvvv
+	forge test --match-path 'test/forked/**.t.sol' --fork-url $(SEPOLIA_RPC_URL) -vvv
 
 format: ; forge fmt
 
@@ -66,7 +66,7 @@ deploy:
 		--private-key $(PRIVATE_KEY) \
 		--broadcast \
 		--legacy \
-		-vvvv
+		-vvv
 
 deploy-verify:
 	@forge script $(DEPLOY_SCRIPT) \
@@ -76,7 +76,7 @@ deploy-verify:
 		--verify \
 		--broadcast \
 		--legacy \
-		-vvvv
+		-vvv
 
 # ========== 启动方式说明 ==========
 help:

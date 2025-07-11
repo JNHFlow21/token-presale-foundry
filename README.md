@@ -8,6 +8,7 @@
 
 ## 📌 目录
 
+- [快速开始](#快速开始)
 - [项目概述](#项目概述)
 - [功能特点](#功能特点)
 - [技术架构](#技术架构)
@@ -18,6 +19,68 @@
 - [安全考量](#安全考量)
 - [贡献指南](#贡献指南)
 - [许可证](#许可证)
+
+## 🚀 快速开始
+
+按照以下步骤快速启动项目：
+
+1. **克隆仓库**
+   ```bash
+   git clone https://github.com/[username]/token-presale-foundry.git
+   cd token-presale-foundry
+   ```
+
+2. **配置环境变量**
+   - 创建`.env`文件
+   ```bash
+   cp .env.example .env
+   ```
+   - 编辑`.env`文件，配置必要的变量：
+   ```
+   # RPC URLs
+   SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_API_KEY
+   MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_API_KEY
+   
+   # 部署钱包
+   PRIVATE_KEY=your_private_key
+   MYWALLET_ADDRESS=your_wallet_address
+   
+   # API Keys (如需验证合约)
+   ETHERSCAN_API_KEY=your_etherscan_api_key
+   ```
+
+3. **构建项目**
+   ```bash
+   make build
+   ```
+
+4. **启动本地测试链**
+   ```bash
+   make anvil
+   ```
+
+5. **部署合约**
+   - 打开新终端，查看可用命令
+   ```bash
+   make help
+   ```
+   - 根据提示部署到不同网络：
+     - 本地部署：`make deploy-anvil`
+     - Sepolia测试网：`make deploy-sepolia`
+
+6. **启动前端服务**
+   - 打开新终端，运行Python简单服务器：
+   ```bash
+   python3 -m http.server 8000
+   ```
+   - 在浏览器中访问: [http://localhost:8000](http://localhost:8000)
+   - 根据`README-frontend.md`中的说明使用前端界面
+
+### 💡 重要提示
+
+- **关于提取ETH功能**：执行`withdrawETH`函数时，这是一个内部交易(Internal Transaction)，交易本身的value为0，钱包交易记录只会显示"已确认"状态，不会显示实际转移的ETH金额。
+- 如需查看实际转移的ETH，请在相应的区块链浏览器(如Etherscan)上使用交易哈希查找交易详情，并查看"Internal Txns"标签页。
+- 这是正常行为，因为资金转移发生在合约内部调用过程中，而不是直接通过交易value字段。
 
 ## 🌟 项目概述
 

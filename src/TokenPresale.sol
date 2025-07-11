@@ -29,8 +29,7 @@ contract TokenPresale {
     mapping(address => uint256) public userTotalToken; // 用户总共的代币数量
     bool public paused; //紧急暂停项目
     uint256 public constant tolerance = 1e16; // 容忍 0.01 usd 的误差
-    AggregatorV3Interface public priceFeed;
-
+    AggregatorV3Interface public immutable priceFeed;
 
     using PriceConverter for uint256;
 
@@ -38,13 +37,24 @@ contract TokenPresale {
         priceFeed = AggregatorV3Interface(_priceFeed);
         owner = msg.sender;
         presaleEndTime = block.timestamp + 30 * 60; // 30min
-        goalInUsd = 50 * 1e18; // 100usd,要对齐18位精度，因为priceconverter 返回的值也是18位精度的美元 比如 100 * 1e18
+        goalInUsd = 50 * 1e18; // 50usd,要对齐18位精度，因为priceconverter 返回的值也是18位精度的美元
         tokenPerUsdRate = 100; // 100 = 1 USD 得 100 Token
     }
 
-    // 供库调用
-    function getPriceFeed() public view returns (AggregatorV3Interface) {
-        return priceFeed;
+    /*
+     * 获取ETH/USD价格转换率
+     * @param ethAmount 以太币金额（wei）
+     * @return 对应的美元价值，18位精度
+     */
+    function getEthUsdPrice(uint256 ethAmount) public view returns (uint256) {
+        // 获取最新价格
+        (, int256 answer,,,) = priceFeed.latestRoundData();
+        
+        // 将价格转换为18位精度 (Chainlink通常是8位精度)
+        uint256 ethPrice = uint256(answer) * 10**10;
+        
+        // 计算美元价值
+        return (ethPrice * ethAmount) / 1e18;
     }
 
     /*
@@ -59,14 +69,14 @@ contract TokenPresale {
         }
 
         uint256 minUsd = 10 * 1e18;
-        if (msg.value.getLatestETHPriceInUSD() < minUsd) revert TooSmall();
+        uint256 contributedUsd = getEthUsdPrice(msg.value);
+        if (contributedUsd < minUsd) revert TooSmall();
 
         if (!hasContributed[msg.sender]) {
             hasContributed[msg.sender] = true;
             contributors.push(msg.sender);
         }
 
-        uint256 contributedUsd = msg.value.getLatestETHPriceInUSD();
         userUsdContributed[msg.sender] += contributedUsd;
         totalUsdRaised += contributedUsd;
     }

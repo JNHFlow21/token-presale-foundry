@@ -23,7 +23,7 @@
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/[username]/token-presale-foundry.git
+   git clone https://github.com/JNHFlow21/token-presale-foundry.git
    cd token-presale-foundry
    ```
 

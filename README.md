@@ -30,7 +30,7 @@
 2. **配置环境变量**
    - 创建`.env`文件
    ```bash
-   cp .env
+   cp .env.example .env
    ```
    - 编辑`.env`文件，配置必要的变量：
    ```
